@@ -12,16 +12,23 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 MODELS_TO_TRY = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
 
+@app.route("/", methods=["GET"])
+def health_check():
+    return jsonify({"status": "Online", "has_api_key": bool(GEMINI_API_KEY)})
+
 @app.route("/teach", methods=["POST"])
 def teach_topic():
     if not GEMINI_API_KEY:
-        return jsonify({"status": "Error", "message": "Missing GEMINI_API_KEY on server!"}), 500
+        return jsonify({"status": "Error", "message": "Missing GEMINI_API_KEY on Render!"}), 500
 
-    # Read text fields from FormData
     user_message = request.form.get("message", "").strip()
     level = request.form.get("level", "Beginner")
     history_raw = request.form.get("history", "[]")
-    history = json.loads(history_raw)
+    try:
+        history = json.loads(history_raw)
+    except Exception:
+        history = []
+
     uploaded_file = request.files.get("file")
 
     if not user_message and not uploaded_file:
@@ -31,8 +38,8 @@ def teach_topic():
 
     conversation_text = ""
     for msg in history[-6:]:
-        role_label = "Student" if msg["role"] == "user" else "AI Tutor"
-        conversation_text += f"{role_label}: {msg['text']}\n"
+        role_label = "Student" if msg.get("role") == "user" else "AI Tutor"
+        conversation_text += f"{role_label}: {msg.get('text', '')}\n"
 
     prompt = (
         f"You are a clear, encouraging personal AI tutor teaching a {level} student. "
@@ -48,7 +55,6 @@ def teach_topic():
     gemini_file = None
 
     try:
-        # Handle image, video, or PDF/text upload
         if uploaded_file and uploaded_file.filename:
             _, ext = os.path.splitext(uploaded_file.filename)
             with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
@@ -57,7 +63,6 @@ def teach_topic():
 
             gemini_file = client.files.upload(file=temp_path)
 
-            # Videos take a few seconds to process on Google's servers
             while getattr(gemini_file.state, "name", "") == "PROCESSING":
                 time.sleep(2)
                 gemini_file = client.files.get(name=gemini_file.name)
@@ -82,7 +87,6 @@ def teach_topic():
         return jsonify({"status": "Error", "message": str(e)}), 500
 
     finally:
-        # Clean up temporary local file and remote Gemini file
         if temp_path and os.path.exists(temp_path):
             os.remove(temp_path)
         if gemini_file:
