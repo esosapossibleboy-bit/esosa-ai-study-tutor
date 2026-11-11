@@ -6,6 +6,8 @@ interface ChatMessage {
   text: string;
 }
 
+const API_URL = "https://https://esosa-ai-tutor-api.onrender.com";
+
 const INITIAL_MESSAGE: ChatMessage = {
   role: "ai",
   text: "Hi! Ask me anything, or click + to upload an image, video, PDF, or text file for me to explain.",
@@ -61,7 +63,7 @@ export default function App() {
     setLoading(true);
 
     try {
-      const res = await fetch("https://esosa-ai-tutor-api.onrender.com", {
+      const res = await fetch(API_URL, {
         method: "POST",
         body: formData,
       });
@@ -73,7 +75,7 @@ export default function App() {
         alert("❌ " + data.message);
       }
     } catch {
-      alert("🚨 Make sure study_server.py is running on port 8001!");
+      alert("🚨 Server is waking up on Render. Wait 30 seconds and click Ask again!");
     } finally {
       setLoading(false);
     }
