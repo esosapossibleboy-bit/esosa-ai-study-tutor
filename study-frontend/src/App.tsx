@@ -61,7 +61,7 @@ export default function App() {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:8001/teach", {
+      const res = await fetch("https://esosa-ai-tutor-api.onrender.com", {
         method: "POST",
         body: formData,
       });
