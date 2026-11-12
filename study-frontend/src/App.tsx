@@ -6,8 +6,9 @@ interface ChatMessage {
   text: string;
 }
 
-const RENDER_HOST = "://onrender.com";
+const RENDER_HOST = "esosa-ai-tutor-api.onrender.com";
 const API_URL = `https://${RENDER_HOST}/teach`;
+
 
 
 
